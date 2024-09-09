@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Audio Stream</title>
+</head>
+<body>
+    <h1>Streaming Audio...</h1>
+    <script>
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function(stream) {
+                const socket = new WebSocket('ws://your-glitch-project-name.glitch.me');
+                const mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = function(e) {
+                    socket.send(e.data);  // Send audio data to the server
+                };
+                mediaRecorder.start(100); // Capture data every 100ms
+            })
+            .catch(function(err) {
+                console.error('Error accessing the microphone:', err);
+            });
+    </script>
+</body>
+</html>
