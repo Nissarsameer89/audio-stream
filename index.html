@@ -8,7 +8,7 @@
     <script>
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(function(stream) {
-                const socket = new WebSocket('ws://your-glitch-project-name.glitch.me');
+                const socket = new WebSocket('https://crystal-excellent-curve.glitch.me');
                 const mediaRecorder = new MediaRecorder(stream);
                 mediaRecorder.ondataavailable = function(e) {
                     socket.send(e.data);  // Send audio data to the server
