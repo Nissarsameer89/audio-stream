@@ -5,7 +5,7 @@
 </head>
 <body>
     <h1>Recording and Downloading Audio...</h1>
-    <a id="downloadLink" download="audio.webm">Download Audio</a>
+    <a id="downloadLink" download="audio.webm" style="display: none;">Download Audio</a>
     <script>
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(function(stream) {
@@ -13,15 +13,25 @@
                 const chunks = [];
 
                 mediaRecorder.ondataavailable = function(e) {
-                    chunks.push(e.data);
+                    if (e.data.size > 0) {
+                        console.log('Received audio data chunk:', e.data);
+                        chunks.push(e.data);
+                    } else {
+                        console.warn('Received empty data chunk.');
+                    }
                 };
 
                 mediaRecorder.onstop = function() {
-                    const blob = new Blob(chunks, { type: 'audio/webm' });
-                    const url = URL.createObjectURL(blob);
-                    const downloadLink = document.getElementById('downloadLink');
-                    downloadLink.href = url;
-                    downloadLink.style.display = 'block'; // Show the download link
+                    if (chunks.length > 0) {
+                        const blob = new Blob(chunks, { type: 'audio/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const downloadLink = document.getElementById('downloadLink');
+                        downloadLink.href = url;
+                        downloadLink.style.display = 'block'; // Show the download link
+                        console.log('Audio data recorded and download link created.');
+                    } else {
+                        console.warn('No audio data recorded.');
+                    }
                 };
 
                 mediaRecorder.start(100); // Capture data every 100ms
