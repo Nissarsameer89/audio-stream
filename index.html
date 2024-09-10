@@ -10,12 +10,34 @@
             .then(function(stream) {
                 // Use 'wss://' for a secure WebSocket connection
                 const socket = new WebSocket('wss://crystal-excellent-curve.glitch.me');
-                
-                const mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = function(e) {
-                    socket.send(e.data);  // Send audio data to the server
+
+                let mediaRecorder = new MediaRecorder(stream);
+
+                // Handle WebSocket open event
+                socket.onopen = function() {
+                    console.log('WebSocket connection opened.');
+
+                    mediaRecorder.ondataavailable = function(e) {
+                        if (socket.readyState === WebSocket.OPEN) {
+                            socket.send(e.data);  // Send audio data to the server
+                        } else {
+                            console.error('WebSocket is not open. Cannot send data.');
+                        }
+                    };
+
+                    mediaRecorder.start(100); // Capture data every 100ms
                 };
-                mediaRecorder.start(100); // Capture data every 100ms
+
+                // Handle WebSocket error event
+                socket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                };
+
+                // Handle WebSocket close event
+                socket.onclose = function() {
+                    console.log('WebSocket connection closed.');
+                };
+
             })
             .catch(function(err) {
                 console.error('Error accessing the microphone:', err);
