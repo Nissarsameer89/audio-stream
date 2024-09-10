@@ -4,43 +4,32 @@
     <title>Live Audio Stream Sender</title>
 </head>
 <body>
-    <h1>Streaming Audio...</h1>
+    <h1>Recording and Downloading Audio...</h1>
+    <a id="downloadLink" download="audio.webm">Download Audio</a>
     <script>
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(function(stream) {
-                const socket = new WebSocket('wss://crystal-excellent-curve.glitch.me');
                 const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-
-                // Flag to check WebSocket status
-                let isSocketOpen = false;
-
-                socket.onopen = function() {
-                    console.log('WebSocket connection opened.');
-                    isSocketOpen = true;
-                };
-
-                socket.onerror = function(error) {
-                    console.error('WebSocket error:', error);
-                };
-
-                socket.onclose = function() {
-                    console.log('WebSocket connection closed.');
-                    isSocketOpen = false;
-                };
+                const chunks = [];
 
                 mediaRecorder.ondataavailable = function(e) {
-                    if (isSocketOpen) {
-                        const reader = new FileReader();
-                        reader.readAsArrayBuffer(e.data); // Convert Blob to ArrayBuffer
-                        reader.onloadend = function() {
-                            socket.send(reader.result); // Send ArrayBuffer through WebSocket
-                        };
-                    } else {
-                        console.warn('WebSocket is not open. Data will not be sent.');
-                    }
+                    chunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = function() {
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const downloadLink = document.getElementById('downloadLink');
+                    downloadLink.href = url;
+                    downloadLink.style.display = 'block'; // Show the download link
                 };
 
                 mediaRecorder.start(100); // Capture data every 100ms
+
+                // Stop recording after 10 seconds for demonstration
+                setTimeout(function() {
+                    mediaRecorder.stop();
+                }, 10000);
 
             })
             .catch(function(err) {
