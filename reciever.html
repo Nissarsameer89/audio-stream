@@ -15,8 +15,9 @@
         socket.onmessage = function(event) {
             const audioContext = new AudioContext();
 
-            // Convert the Blob data to an ArrayBuffer
+            // Convert Blob data to ArrayBuffer
             event.data.arrayBuffer().then(function(arrayBuffer) {
+                console.log('ArrayBuffer size:', arrayBuffer.byteLength);
                 return audioContext.decodeAudioData(arrayBuffer);
             }).then(function(audioBuffer) {
                 // Play the decoded audio
@@ -36,4 +37,6 @@
         socket.onclose = function() {
             console.log('WebSocket connection closed.');
         };
-   
+    </script>
+</body>
+</html>
