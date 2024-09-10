@@ -5,15 +5,33 @@
 </head>
 <body>
     <h1>Streaming Audio...</h1>
+    <audio id="audio" controls></audio>
     <script>
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(function(stream) {
-                const socket = new WebSocket('https://crystal-excellent-curve.glitch.me');
+                const socket = new WebSocket('wss://crystal-excellent-curve.glitch.me'); // Ensure the URL is correct
                 const mediaRecorder = new MediaRecorder(stream);
+                
+                // Sending audio data to the server
                 mediaRecorder.ondataavailable = function(e) {
                     socket.send(e.data);  // Send audio data to the server
                 };
                 mediaRecorder.start(100); // Capture data every 100ms
+                
+                // Receiving and playing audio data
+                socket.onmessage = function(event) {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const reader = new FileReader();
+                    reader.readAsArrayBuffer(event.data);
+                    reader.onloadend = function() {
+                        audioContext.decodeAudioData(reader.result, function(buffer) {
+                            const source = audioContext.createBufferSource();
+                            source.buffer = buffer;
+                            source.connect(audioContext.destination);
+                            source.start(0);
+                        });
+                    };
+                };
             })
             .catch(function(err) {
                 console.error('Error accessing the microphone:', err);
