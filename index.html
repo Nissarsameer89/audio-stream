@@ -9,21 +9,34 @@
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(function(stream) {
                 const socket = new WebSocket('wss://crystal-excellent-curve.glitch.me');
+                const mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = function(e) {
+                    if (socket.readyState === WebSocket.OPEN) {
+                        socket.send(e.data);  // Send audio data to the server
+                    } else {
+                        console.warn('WebSocket is not open. Data will not be sent.');
+                    }
+                };
+
+                mediaRecorder.start(100); // Capture data every 100ms
 
                 socket.onopen = function() {
                     console.log('WebSocket connection opened.');
+                };
 
-                    const mediaRecorder = new MediaRecorder(stream);
-                    
-                    mediaRecorder.ondataavailable = function(e) {
-                        if (socket.readyState === WebSocket.OPEN) {
-                            socket.send(e.data);  // Send audio data to the server
-                        } else {
-                            console.warn('WebSocket is not open. Data will not be sent.');
-                        }
+                socket.onmessage = function(event) {
+                    const audioContext = new AudioContext();
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        audioContext.decodeAudioData(reader.result, function(buffer) {
+                            const source = audioContext.createBufferSource();
+                            source.buffer = buffer;
+                            source.connect(audioContext.destination);
+                            source.start(0);
+                        });
                     };
-
-                    mediaRecorder.start(100); // Capture data every 100ms
+                    reader.readAsArrayBuffer(event.data);
                 };
 
                 socket.onerror = function(error) {
@@ -32,7 +45,6 @@
 
                 socket.onclose = function() {
                     console.log('WebSocket connection closed.');
-                    // Optionally, you could try to reconnect or stop the mediaRecorder
                 };
 
             })
