@@ -11,8 +11,25 @@
                 const socket = new WebSocket('wss://crystal-excellent-curve.glitch.me');
                 const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
 
+                // Flag to check WebSocket status
+                let isSocketOpen = false;
+
+                socket.onopen = function() {
+                    console.log('WebSocket connection opened.');
+                    isSocketOpen = true;
+                };
+
+                socket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                };
+
+                socket.onclose = function() {
+                    console.log('WebSocket connection closed.');
+                    isSocketOpen = false;
+                };
+
                 mediaRecorder.ondataavailable = function(e) {
-                    if (socket.readyState === WebSocket.OPEN) {
+                    if (isSocketOpen) {
                         const reader = new FileReader();
                         reader.readAsArrayBuffer(e.data); // Convert Blob to ArrayBuffer
                         reader.onloadend = function() {
@@ -24,18 +41,6 @@
                 };
 
                 mediaRecorder.start(100); // Capture data every 100ms
-
-                socket.onopen = function() {
-                    console.log('WebSocket connection opened.');
-                };
-
-                socket.onerror = function(error) {
-                    console.error('WebSocket error:', error);
-                };
-
-                socket.onclose = function() {
-                    console.log('WebSocket connection closed.');
-                };
 
             })
             .catch(function(err) {
