@@ -4,41 +4,43 @@
     <title>Live Audio Stream</title>
 </head>
 <body>
-    <h1>Listening to Live Audio...</h1>
+    <h1>Streaming Audio...</h1>
     <script>
-        const socket = new WebSocket('wss://crystal-excellent-curve.glitch.me');
-        
-        socket.onopen = function() {
-            console.log('WebSocket connection opened.');
-        };
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(function(stream) {
+                const socket = new WebSocket('wss://crystal-excellent-curve.glitch.me');
+                const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
 
-        socket.onmessage = function(event) {
-            const audioContext = new AudioContext();
-            const reader = new FileReader();
+                mediaRecorder.ondataavailable = function(e) {
+                    if (socket.readyState === WebSocket.OPEN) {
+                        const reader = new FileReader();
+                        reader.readAsArrayBuffer(e.data); // Convert Blob to ArrayBuffer
+                        reader.onloadend = function() {
+                            socket.send(reader.result); // Send ArrayBuffer through WebSocket
+                        };
+                    } else {
+                        console.warn('WebSocket is not open. Data will not be sent.');
+                    }
+                };
 
-            reader.onload = function() {
-                audioContext.decodeAudioData(reader.result)
-                    .then(function(buffer) {
-                        const source = audioContext.createBufferSource();
-                        source.buffer = buffer;
-                        source.connect(audioContext.destination);
-                        source.start(0);
-                    })
-                    .catch(function(error) {
-                        console.error('Error decoding audio data:', error);
-                    });
-            };
+                mediaRecorder.start(100); // Capture data every 100ms
 
-            reader.readAsArrayBuffer(event.data);
-        };
+                socket.onopen = function() {
+                    console.log('WebSocket connection opened.');
+                };
 
-        socket.onerror = function(error) {
-            console.error('WebSocket error:', error);
-        };
+                socket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                };
 
-        socket.onclose = function() {
-            console.log('WebSocket connection closed.');
-        };
+                socket.onclose = function() {
+                    console.log('WebSocket connection closed.');
+                };
+
+            })
+            .catch(function(err) {
+                console.error('Error accessing the microphone:', err);
+            });
     </script>
 </body>
 </html>
